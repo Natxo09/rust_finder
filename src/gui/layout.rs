@@ -595,8 +595,7 @@ impl eframe::App for App {
 }
 
 // Función para ejecutar la aplicación
-pub fn run() {
-    let options = eframe::NativeOptions::default();
+pub fn run_app(options: eframe::NativeOptions) {
     eframe::run_native(
         "Buscador de Archivos",
         options,
