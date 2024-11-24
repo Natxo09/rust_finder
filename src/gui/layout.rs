@@ -427,7 +427,7 @@ impl eframe::App for App {
             ui.vertical(|ui| {
                 // Cabecera con información
                 ui.horizontal(|ui| {
-                    ui.heading("File Finder");
+                    ui.heading("Rust Finder");
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let total_resultados = self.resultados.len();
                         ui.label(format!("Total: {} files", total_resultados));
@@ -616,7 +616,7 @@ impl eframe::App for App {
 // Función para ejecutar la aplicación
 pub fn run_app(options: eframe::NativeOptions) {
     eframe::run_native(
-        "File Finder",
+        "Rust Finder",
         options,
         Box::new(|_cc| Ok(Box::new(App::default()))),
     );
