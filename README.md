@@ -1,5 +1,7 @@
 # 🔍 Rust Finder
 
+![Rust Finder Preview](assets/rust_finder.png)
+
 ## 📝 Description
 Rust Finder is a powerful and customizable file searching application built entirely in Rust. The application allows users to search for files and folders with advanced filtering options and a modern GUI.
 
