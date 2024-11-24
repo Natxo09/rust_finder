@@ -49,7 +49,9 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
-            directorio: String::new(),
+            directorio: std::env::current_dir()
+                .map(|path| path.to_string_lossy().to_string())
+                .unwrap_or_default(),
             incluir_subdirectorios: false,
             solo_archivos: false,
             solo_carpetas: false,
@@ -226,6 +228,15 @@ impl Default for App {
 
 impl App {
     fn realizar_busqueda(&mut self) {
+        if self.directorio.trim().is_empty() {
+            if let Ok(current_dir) = std::env::current_dir() {
+                self.directorio = current_dir.to_string_lossy().to_string();
+            } else {
+                self.buscando = false;
+                return;
+            }
+        }
+
         if directory_handler::validar_directorio(&self.directorio) {
             self.buscando = true;
             self.progreso = 0.0;
@@ -293,6 +304,8 @@ impl App {
                     *shared_results = Some(resultados);
                 }
             });
+        } else {
+            self.buscando = false;
         }
     }
 
