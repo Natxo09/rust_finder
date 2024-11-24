@@ -61,7 +61,7 @@ impl Default for App {
             resultados_por_pagina: 100,
             extensiones: vec![
                 (
-                    "Imágenes".to_string(),
+                    "Images".to_string(),
                     vec![
                         (".jpg".to_string(), true),
                         (".jpeg".to_string(), true),
@@ -79,7 +79,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Documentos".to_string(),
+                    "Documents".to_string(),
                     vec![
                         (".pdf".to_string(), true),
                         (".doc".to_string(), true),
@@ -119,7 +119,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Audios".to_string(),
+                    "Audio".to_string(),
                     vec![
                         (".mp3".to_string(), true),
                         (".wav".to_string(), true),
@@ -135,7 +135,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Comprimidos".to_string(),
+                    "Compressed".to_string(),
                     vec![
                         (".zip".to_string(), true),
                         (".rar".to_string(), true),
@@ -148,7 +148,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Programación".to_string(),
+                    "Programming".to_string(),
                     vec![
                         (".py".to_string(), true),
                         (".js".to_string(), true),
@@ -172,7 +172,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Diseño".to_string(),
+                    "Design".to_string(),
                     vec![
                         (".sketch".to_string(), true),
                         (".fig".to_string(), true),
@@ -187,7 +187,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Ejecutables".to_string(),
+                    "Executables".to_string(),
                     vec![
                         (".exe".to_string(), true),
                         (".msi".to_string(), true),
@@ -201,7 +201,7 @@ impl Default for App {
                     ],
                 ),
                 (
-                    "Otros".to_string(),
+                    "Others".to_string(),
                     vec![
                         (".log".to_string(), true),
                         (".cfg".to_string(), true),
@@ -347,35 +347,35 @@ impl eframe::App for App {
         egui::SidePanel::left("panel_lateral")
             .min_width(250.0)
             .show(ctx, |ui| {
-                ui.heading("Filtros");
+                ui.heading("Filters");
                 ui.separator();
 
                 // Botón para seleccionar directorio
-                if ui.button("Seleccionar directorio").clicked() {
+                if ui.button("Select directory").clicked() {
                     if let Some(path) = open_directory::seleccionar_directorio() {
                         self.directorio = path.to_string_lossy().to_string();
                     }
                 }
 
                 // Campo editable para la ruta
-                ui.label("Directorio:");
+                ui.label("Directory:");
                 ui.text_edit_singleline(&mut self.directorio);
 
                 ui.separator();
 
                 // Checkbox para incluir subdirectorios
-                ui.checkbox(&mut self.incluir_subdirectorios, "Incluir subdirectorios");
+                ui.checkbox(&mut self.incluir_subdirectorios, "Include subdirectories");
 
                 // Checkbox para filtrar archivos o carpetas
                 ui.horizontal(|ui| {
-                    ui.checkbox(&mut self.solo_archivos, "Solo archivos");
-                    ui.checkbox(&mut self.solo_carpetas, "Solo carpetas");
+                    ui.checkbox(&mut self.solo_archivos, "Only files");
+                    ui.checkbox(&mut self.solo_carpetas, "Only folders");
                 });
 
                 ui.separator();
 
                 // Botón global para marcar o desmarcar todas las extensiones
-                if ui.button(if self.marcar_todas { "Desmarcar todas" } else { "Marcar todas" }).clicked() {
+                if ui.button(if self.marcar_todas { "Deselect all" } else { "Select all" }).clicked() {
                     self.marcar_todas = !self.marcar_todas;
                     for (_grupo, extensiones) in &mut self.extensiones {
                         for (_, estado) in extensiones {
@@ -396,9 +396,9 @@ impl eframe::App for App {
                 }
 
                 // Filtro personalizado
-                ui.label("Filtro personalizado (ej: .abc):");
+                ui.label("Custom filter (ej: .abc):");
                 ui.text_edit_singleline(&mut self.filtro_personalizado);
-                if ui.button("Añadir filtro").clicked() && !self.filtro_personalizado.is_empty() {
+                if ui.button("Apply filter").clicked() && !self.filtro_personalizado.is_empty() {
                     if let Some((_, extensiones)) = self.extensiones.iter_mut().find(|(g, _)| g == "Otros") {
                         extensiones.push((self.filtro_personalizado.clone(), true));
                         self.filtro_personalizado.clear();
@@ -412,7 +412,7 @@ impl eframe::App for App {
 
                 // Marca de agua al final del panel lateral
                 ui.with_layout(egui::Layout::left_to_right(egui::Align::LEFT), |ui| {
-                    ui.label("Desarrollado por ");
+                    ui.label("Developed by ");
                     ui.hyperlink_to(
                         egui::RichText::new("Natxo")
                             .weak()
@@ -427,22 +427,22 @@ impl eframe::App for App {
             ui.vertical(|ui| {
                 // Cabecera con información
                 ui.horizontal(|ui| {
-                    ui.heading("Buscador de Archivos");
+                    ui.heading("File Finder");
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let total_resultados = self.resultados.len();
-                        ui.label(format!("Total: {} archivos", total_resultados));
+                        ui.label(format!("Total: {} files", total_resultados));
                     });
                 });
                 ui.separator();
 
                 // Barra de búsqueda y botón
                 ui.horizontal(|ui| {
-                    ui.label("Buscar:");
+                    ui.label("Search:");
                     let response = ui.text_edit_singleline(&mut self.termino_busqueda)
-                        .on_hover_text("Presiona Enter para buscar");
+                        .on_hover_text("Press Enter to search");
                     
-                    let boton_buscar = ui.button("🔍 Buscar")
-                        .on_hover_text("Buscar archivos");
+                    let boton_buscar = ui.button("🔍 Search")
+                        .on_hover_text("Search files");
 
                     if (boton_buscar.clicked() || 
                         (response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))) 
@@ -471,7 +471,7 @@ impl eframe::App for App {
                     ui.add_space(10.0);
                     ui.horizontal(|ui| {
                         ui.spinner();
-                        ui.label("Buscando archivos...");
+                        ui.label("Searching files...");
                     });
                     ui.add_space(5.0);
                     
@@ -489,9 +489,9 @@ impl eframe::App for App {
 
                 // Añadir controles de ordenamiento antes de la tabla
                 ui.horizontal(|ui| {
-                    ui.label("Ordenar por:");
+                    ui.label("Sort by:");
                     
-                    if ui.button("Nombre").clicked() {
+                    if ui.button("Name").clicked() {
                         if self.order_by == OrderBy::Name {
                             self.order_direction = match self.order_direction {
                                 OrderDirection::Ascending => OrderDirection::Descending,
@@ -504,7 +504,7 @@ impl eframe::App for App {
                         self.ordenar_resultados();
                     }
                     
-                    if ui.button("Tipo").clicked() {
+                    if ui.button("Type").clicked() {
                         if self.order_by == OrderBy::Type {
                             self.order_direction = match self.order_direction {
                                 OrderDirection::Ascending => OrderDirection::Descending,
@@ -517,7 +517,7 @@ impl eframe::App for App {
                         self.ordenar_resultados();
                     }
                     
-                    if ui.button("Tamaño").clicked() {
+                    if ui.button("Size").clicked() {
                         if self.order_by == OrderBy::Size {
                             self.order_direction = match self.order_direction {
                                 OrderDirection::Ascending => OrderDirection::Descending,
@@ -530,7 +530,7 @@ impl eframe::App for App {
                         self.ordenar_resultados();
                     }
                     
-                    if ui.button("Fecha").clicked() {
+                    if ui.button("Date").clicked() {
                         if self.order_by == OrderBy::Date {
                             self.order_direction = match self.order_direction {
                                 OrderDirection::Ascending => OrderDirection::Descending,
@@ -557,19 +557,19 @@ impl eframe::App for App {
                     
                     // Controles de paginación
                     ui.horizontal(|ui| {
-                        if ui.button("⏮ Primera").clicked() {
+                        if ui.button("⏮ First").clicked() {
                             self.pagina_actual = 0;
                         }
-                        if ui.button("◀ Anterior").clicked() && self.pagina_actual > 0 {
+                        if ui.button("◀ Previous").clicked() && self.pagina_actual > 0 {
                             self.pagina_actual -= 1;
                         }
                         
-                        ui.label(format!("Página {} de {}", self.pagina_actual + 1, total_paginas));
+                        ui.label(format!("Page {} of {}", self.pagina_actual + 1, total_paginas));
                         
-                        if ui.button("Siguiente ▶").clicked() && self.pagina_actual < total_paginas - 1 {
+                        if ui.button("Next ▶").clicked() && self.pagina_actual < total_paginas - 1 {
                             self.pagina_actual += 1;
                         }
-                        if ui.button("Última ⏭").clicked() {
+                        if ui.button("Last ⏭").clicked() {
                             self.pagina_actual = total_paginas - 1;
                         }
                     });
@@ -595,7 +595,7 @@ impl eframe::App for App {
                     // Información de resultados mostrados
                     ui.horizontal(|ui| {
                         ui.label(format!(
-                            "Mostrando resultados {} - {} de {}",
+                            "Showing results {} - {} of {}",
                             inicio + 1,
                             fin,
                             self.resultados.len()
@@ -604,7 +604,7 @@ impl eframe::App for App {
                 } else {
                     ui.vertical_centered(|ui| {
                         ui.add_space(20.0);
-                        ui.label("No se encontraron resultados");
+                        ui.label("No results found");
                         ui.add_space(20.0);
                     });
                 }
@@ -616,7 +616,7 @@ impl eframe::App for App {
 // Función para ejecutar la aplicación
 pub fn run_app(options: eframe::NativeOptions) {
     eframe::run_native(
-        "Buscador de Archivos",
+        "File Finder",
         options,
         Box::new(|_cc| Ok(Box::new(App::default()))),
     );
