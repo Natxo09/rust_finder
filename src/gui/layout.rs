@@ -1,5 +1,3 @@
-// TODO: Cuando se le da a buscar sin poner ninguna ruta se queda en bucle buscando
-//TODO: Cambiar de lado el watermark porque cuando cargan los resultados se esconde
 
 use eframe::egui;
 use crate::actions::open_directory;

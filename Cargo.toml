@@ -3,6 +3,19 @@ name = "rust_finder"
 version = "0.1.0"
 edition = "2021"
 
+# Añadir estos metadatos para macOS
+[package.metadata.bundle]
+name = "Rust Finder"
+identifier = "com.natxo.rustfinder"
+icon = ["assets/icon.icns"]  # Necesitarás crear un archivo .icns
+version = "0.1.0"
+copyright = "Copyright (c) 2024 Natxo"
+category = "Utility"
+short_description = "Buscador de archivos"
+long_description = """
+Una aplicación para buscar archivos y carpetas en tu sistema.
+"""
+
 [dependencies]
 eframe = "0.29.1"
 opener = "0.7.2"
@@ -25,3 +38,7 @@ subsystem = "windows"
 [[bin]]
 name = "rust_finder"
 windows_subsystem = "windows"
+
+# Añadir dependencia para el empaquetado
+[build-dependencies]
+cargo-bundle = "0.6.0"

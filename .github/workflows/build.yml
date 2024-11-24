@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            artifact_name: RustFinder-windows.zip
+            asset_name: rust_finder.exe
+          - os: ubuntu-latest
+            artifact_name: RustFinder-linux.tar.gz
+            asset_name: rust_finder
+          - os: macos-latest
+            artifact_name: RustFinder-macos.tar.gz
+            asset_name: rust_finder
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    
+    - name: Build
+      run: cargo build --release
+    
+    - name: Create Package Directory
+      run: mkdir -p target/package
+    
+    - name: Package Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir target/package/windows
+        copy target/release/rust_finder.exe target/package/windows/
+        copy assets/icon.ico target/package/windows/
+        Compress-Archive -Path target/package/windows/* -DestinationPath target/package/${{ matrix.artifact_name }}
+      shell: pwsh
+    
+    - name: Package Linux/macOS
+      if: matrix.os != 'windows-latest'
+      run: |
+        mkdir -p target/package/dist
+        cp target/release/rust_finder target/package/dist/
+        cp assets/icon.* target/package/dist/
+        cd target/package
+        tar czf ${{ matrix.artifact_name }} dist/*
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.os }}-build
+        path: target/package/${{ matrix.artifact_name }}
