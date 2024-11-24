@@ -65,16 +65,21 @@ jobs:
       run: cargo build --release
       timeout-minutes: 20
     
+    - name: Clean Package Directory
+      shell: bash
+      run: rm -rf target/package || true
+    
     - name: Create Package Directory
+      shell: bash
       run: mkdir -p target/package
     
     - name: Package Windows
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir target\package\windows
+        mkdir target\package\windows 2>nul || true
         copy target\release\rust_finder.exe target\package\windows\
         copy assets\icon.ico target\package\windows\
-        powershell Compress-Archive -Path "target\package\windows\*" -DestinationPath "target\package\${{ matrix.artifact_name }}"
+        powershell Compress-Archive -Path "target\package\windows\*" -DestinationPath "target\package\${{ matrix.artifact_name }}" -Force
       shell: cmd
     
     - name: Package Linux/macOS
