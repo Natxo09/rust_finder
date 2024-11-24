@@ -1,14 +1,15 @@
 use std::path::PathBuf;
 use walkdir::WalkDir;
 use crate::utils::file_helpers;
+use crate::search::progress_bar::ProgressTracker;
 
 /// Representa un archivo encontrado por el motor de búsqueda.
 #[derive(Debug)]
 pub struct ArchivoEncontrado {
     pub nombre: String,
     pub ruta: PathBuf,
-    pub tamano: u64,  // Tamaño en bytes
-    pub fecha: String, // Fecha en formato legible
+    pub tamano: u64,
+    pub fecha: String,
 }
 
 /// Busca archivos en un directorio aplicando filtros.
@@ -17,19 +18,35 @@ pub fn buscar_archivos(
     incluir_subdirectorios: bool,
     extensiones: &[String],
     termino_busqueda: &str,
+    progress: &ProgressTracker,
 ) -> Vec<ArchivoEncontrado> {
     let mut resultados = Vec::new();
     
     if let Ok(ruta_base) = std::path::Path::new(directorio).canonicalize() {
+        println!("Iniciando búsqueda en: {}", ruta_base.display());
+
         let walker = WalkDir::new(&ruta_base)
             .follow_links(true)
             .max_depth(if incluir_subdirectorios { std::usize::MAX } else { 1 })
-            .into_iter();
+            .into_iter()
+            .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'));
 
-        for entrada in walker.filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
-                           .filter_map(|e| e.ok()) {
-            // Saltamos el directorio base
+        let entradas: Vec<_> = walker
+            .filter_map(|e| e.ok())
+            .collect();
+
+        let total = entradas.len() as f32;
+        println!("Estableciendo total de archivos: {}", total);
+        progress.reset();  // Primero reseteamos
+        progress.set_total(total);  // Luego establecemos el total
+        println!("Verificando total establecido...");
+        let _ = progress.get_progress();  // Verificar que se estableció correctamente
+
+        for (index, entrada) in entradas.into_iter().enumerate() {
+            println!("Procesando archivo {}/{}", index + 1, total);
+            
             if entrada.path() == ruta_base {
+                progress.increment();
                 continue;
             }
 
@@ -38,6 +55,7 @@ pub fn buscar_archivos(
             // Filtrar por término de búsqueda
             if !termino_busqueda.is_empty() && 
                !nombre.to_lowercase().contains(&termino_busqueda.to_lowercase()) {
+                progress.increment(); // Importante: incrementar incluso si no coincide
                 continue;
             }
 
@@ -52,6 +70,7 @@ pub fn buscar_archivos(
                     );
                 
                 if !es_valido {
+                    progress.increment(); // Importante: incrementar incluso si no es válido
                     continue;
                 }
             }
@@ -69,6 +88,12 @@ pub fn buscar_archivos(
                 tamano,
                 fecha,
             });
+
+            progress.increment(); // Incrementar después de procesar el archivo
+            
+            if index % 10 == 0 { // Cada 10 archivos
+                println!("Progreso actual: {:.2}%", progress.get_progress() * 100.0);
+            }
         }
     }
     

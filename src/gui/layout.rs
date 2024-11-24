@@ -4,6 +4,9 @@ use crate::search::{directory_handler, engine};
 use crate::results::table::{self, Resultado};
 use crate::results::actions_column;
 use crate::utils::file_helpers;
+use crate::search::progress_bar::ProgressTracker;
+use std::thread;
+use std::sync::{Arc, Mutex};
 
 pub struct App {
     pub directorio: String,
@@ -19,6 +22,8 @@ pub struct App {
     pub resultados_por_pagina: usize,
     pub buscando: bool,
     pub progreso: f32,
+    pub progress_tracker: ProgressTracker,
+    pub resultados_compartidos: Arc<Mutex<Option<Vec<Resultado>>>>,
 }
 
 impl Default for App {
@@ -191,6 +196,8 @@ impl Default for App {
             ],
             buscando: false,
             progreso: 0.0,
+            progress_tracker: ProgressTracker::new(),
+            resultados_compartidos: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -198,54 +205,72 @@ impl Default for App {
 impl App {
     fn realizar_busqueda(&mut self) {
         if directory_handler::validar_directorio(&self.directorio) {
-            // Recolectar extensiones activas
-            let mut extensiones_activas: Vec<String> = Vec::new();
-            for (_grupo, extensiones) in &self.extensiones {
-                for (ext, estado) in extensiones {
-                    if *estado {
-                        extensiones_activas.push(ext.clone());
-                    }
-                }
-            }
-
-            // Usar el motor de búsqueda
-            let archivos_encontrados = engine::buscar_archivos(
-                &self.directorio,
-                self.incluir_subdirectorios,
-                &extensiones_activas,
-                &self.termino_busqueda,
-            );
-
-            // Convertir los resultados
-            self.resultados = archivos_encontrados
-                .into_iter()
-                .map(|archivo| Resultado {
-                    nombre: archivo.nombre,
-                    tipo: if archivo.ruta.is_dir() {
-                        "Carpeta".to_string()
-                    } else {
-                        archivo.ruta.extension()
-                            .and_then(|ext| ext.to_str())
-                            .map(|ext| format!(".{}", ext))
-                            .unwrap_or_else(|| "Desconocido".to_string())
-                    },
-                    tamano: file_helpers::formatear_tamano(archivo.tamano),
-                    fecha: archivo.fecha,
-                    ruta: archivo.ruta,
-                })
-                .collect();
-
-            println!("Encontrados {} archivos con término '{}'", 
-                    self.resultados.len(), 
-                    self.termino_busqueda);
-            
-            // Resetear estado de búsqueda
-            self.buscando = false;
-            self.progreso = 1.0;
-        } else {
-            println!("Directorio no válido: {}", self.directorio);
-            self.buscando = false;
+            self.buscando = true;
             self.progreso = 0.0;
+            self.progress_tracker.reset();
+
+            // Clonar los datos necesarios para el hilo
+            let directorio = self.directorio.clone();
+            let incluir_subdirectorios = self.incluir_subdirectorios;
+            let solo_archivos = self.solo_archivos;
+            let solo_carpetas = self.solo_carpetas;
+            let extensiones_activas = self.extensiones.iter()
+                .flat_map(|(_, exts)| exts.iter())
+                .filter(|(_, estado)| *estado)
+                .map(|(ext, _)| ext.clone())
+                .collect::<Vec<_>>();
+            let termino_busqueda = self.termino_busqueda.clone();
+            let progress_tracker = self.progress_tracker.clone();
+            let resultados_compartidos = self.resultados_compartidos.clone();
+
+            thread::spawn(move || {
+                let archivos = engine::buscar_archivos(
+                    &directorio,
+                    incluir_subdirectorios,
+                    &extensiones_activas,
+                    &termino_busqueda,
+                    &progress_tracker,
+                );
+                
+                // Aplicar filtros de tipo
+                let resultados = archivos.into_iter()
+                    .filter(|archivo| {
+                        let es_directorio = archivo.ruta.is_dir();
+                        
+                        // Si ningún filtro está activo, mostrar todo
+                        if !solo_archivos && !solo_carpetas {
+                            return true;
+                        }
+                        
+                        // Aplicar filtros según las opciones seleccionadas
+                        if solo_archivos {
+                            !es_directorio
+                        } else if solo_carpetas {
+                            es_directorio
+                        } else {
+                            true
+                        }
+                    })
+                    .map(|archivo| Resultado {
+                        nombre: archivo.nombre,
+                        ruta: archivo.ruta.clone(),
+                        tamano: file_helpers::formatear_tamano(archivo.tamano),
+                        fecha: archivo.fecha,
+                        tipo: if archivo.ruta.is_dir() {
+                            "Carpeta".to_string()
+                        } else {
+                            archivo.ruta.extension()
+                                .and_then(|ext| ext.to_str())
+                                .map(|ext| format!(".{}", ext))
+                                .unwrap_or_else(|| "Desconocido".to_string())
+                        },
+                    })
+                    .collect::<Vec<_>>();
+                
+                if let Ok(mut shared_results) = resultados_compartidos.lock() {
+                    *shared_results = Some(resultados);
+                }
+            });
         }
     }
 }
@@ -347,17 +372,35 @@ impl eframe::App for App {
                     }
                 });
 
-                // Mostrar barra de progreso cuando está buscando
+                // Verificar si hay resultados nuevos
                 if self.buscando {
+                    if let Ok(mut shared_results) = self.resultados_compartidos.lock() {
+                        if let Some(nuevos_resultados) = shared_results.take() {
+                            self.resultados = nuevos_resultados;
+                            self.buscando = false;
+                            self.progreso = 1.0;
+                        }
+                    }
+                    
+                    // Actualizar la barra de progreso
+                    self.progreso = self.progress_tracker.get_progress();
+                    
+                    // Mostrar la barra de progreso
                     ui.add_space(10.0);
                     ui.horizontal(|ui| {
-                        ui.spinner(); // Muestra un spinner giratorio
+                        ui.spinner();
                         ui.label("Buscando archivos...");
                     });
                     ui.add_space(5.0);
-                    ui.add(egui::ProgressBar::new(self.progreso)
-                        .show_percentage()
-                        .animate(true));
+                    
+                    ui.add(
+                        egui::ProgressBar::new(self.progreso)
+                            .show_percentage()
+                            .animate(true)
+                            .desired_width(ui.available_width())
+                    );
+                    
+                    ctx.request_repaint();
                 }
 
                 ui.separator();
