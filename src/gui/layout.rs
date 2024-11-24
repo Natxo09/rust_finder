@@ -579,6 +579,16 @@ impl eframe::App for App {
                         ui.add_space(20.0);
                     });
                 }
+
+                // Añadir marca de agua al final
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
+                    ui.add(egui::Label::new(
+                        egui::RichText::new("Desarrollado por Natxo")
+                            .weak()
+                            .italics()
+                            .size(14.0)
+                    ));
+                });
             });
         });
     }
