@@ -10,6 +10,7 @@ pub fn validar_directorio(directorio: &str) -> bool {
 
 /// Devuelve una lista de los subdirectorios inmediatos dentro del directorio proporcionado.
 /// Retorna un vector de rutas (`PathBuf`) o un vector vacío si hay algún error.
+#[allow(dead_code)]
 pub fn listar_subdirectorios(directorio: &str) -> Vec<PathBuf> {
     let mut subdirectorios = Vec::new();
     if let Ok(entries) = fs::read_dir(directorio) {

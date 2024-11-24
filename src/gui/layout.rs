@@ -1,4 +1,3 @@
-
 use eframe::egui;
 use crate::actions::open_directory;
 use crate::search::{directory_handler, engine};
@@ -615,9 +614,11 @@ impl eframe::App for App {
 
 // Función para ejecutar la aplicación
 pub fn run_app(options: eframe::NativeOptions) {
-    eframe::run_native(
+    if let Err(e) = eframe::run_native(
         "Rust Finder",
         options,
         Box::new(|_cc| Ok(Box::new(App::default()))),
-    );
+    ) {
+        eprintln!("Application error: {}", e);
+    }
 }

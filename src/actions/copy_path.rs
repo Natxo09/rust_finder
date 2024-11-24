@@ -2,6 +2,7 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 
 /// Copia una ruta al portapapeles.
 /// Retorna `true` si se copia correctamente, `false` si ocurre algún error.
+#[allow(dead_code)]
 pub fn copiar_ruta(ruta: &str) -> bool {
     let mut clipboard: ClipboardContext = match ClipboardProvider::new() {
         Ok(context) => context,

@@ -2,6 +2,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Obtiene el tamaño de un archivo en formato legible (por ejemplo, KB, MB).
+#[allow(dead_code)]
+
 pub fn obtener_tamano_legible(bytes: u64) -> String {
     const KB: u64 = 1024;
     const MB: u64 = KB * 1024;

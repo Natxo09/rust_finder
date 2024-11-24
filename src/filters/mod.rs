@@ -6,6 +6,7 @@ use std::path::PathBuf;
 pub use self::{file_type::*, recursive_search::*};
 
 /// Aplica los filtros sobre una lista de archivos.
+#[allow(dead_code)]
 pub fn aplicar_filtros(
     directorio: &str,
     incluir_subdirectorios: bool,

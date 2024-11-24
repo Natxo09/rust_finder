@@ -83,7 +83,6 @@ jobs:
       run: |
         mkdir target\package\windows 2>nul || true
         copy target\release\rust_finder.exe target\package\windows\
-        copy assets\icon.ico target\package\windows\
         powershell Compress-Archive -Path "target\package\windows\*" -DestinationPath "target\package\${{ matrix.artifact_name }}" -Force
       shell: cmd
     
@@ -92,7 +91,6 @@ jobs:
       run: |
         mkdir -p target/package/dist
         cp target/release/rust_finder target/package/dist/
-        cp assets/icon.* target/package/dist/
         cd target/package
         tar czf ${{ matrix.artifact_name }} dist/*
     
