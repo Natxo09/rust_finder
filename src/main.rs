@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]  // Añade esta línea al principio del archivo
+
 mod gui;
 mod actions;
 mod filters;

@@ -11,3 +11,16 @@ egui = "0.29.1"
 native-dialog = "0.7.0"
 walkdir = "2.3.2"
 arboard = "3.4.1"
+
+# Añade esta sección
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+# Especifica que es una aplicación Windows
+[package.metadata.windows]
+subsystem = "windows"
+
+# Si estás usando una versión reciente de Rust, también puedes usar:
+[[bin]]
+name = "rust_finder"
+windows_subsystem = "windows"
