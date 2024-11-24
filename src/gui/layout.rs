@@ -8,6 +8,21 @@ use crate::search::progress_bar::ProgressTracker;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
+// Añadir estos enums al principio del archivo
+#[derive(Debug, PartialEq, Clone)]
+pub enum OrderBy {
+    Name,
+    Type,
+    Size,
+    Date,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum OrderDirection {
+    Ascending,
+    Descending,
+}
+
 pub struct App {
     pub directorio: String,
     pub incluir_subdirectorios: bool,
@@ -24,6 +39,8 @@ pub struct App {
     pub progreso: f32,
     pub progress_tracker: ProgressTracker,
     pub resultados_compartidos: Arc<Mutex<Option<Vec<Resultado>>>>,
+    pub order_by: OrderBy,
+    pub order_direction: OrderDirection,
 }
 
 impl Default for App {
@@ -198,6 +215,8 @@ impl Default for App {
             progreso: 0.0,
             progress_tracker: ProgressTracker::new(),
             resultados_compartidos: Arc::new(Mutex::new(None)),
+            order_by: OrderBy::Name,
+            order_direction: OrderDirection::Ascending,
         }
     }
 }
@@ -272,6 +291,40 @@ impl App {
                 }
             });
         }
+    }
+
+    fn ordenar_resultados(&mut self) {
+        self.resultados.sort_by(|a, b| {
+            let comparacion = match self.order_by {
+                OrderBy::Name => a.nombre.to_lowercase().cmp(&b.nombre.to_lowercase()),
+                OrderBy::Type => a.tipo.cmp(&b.tipo),
+                OrderBy::Size => {
+                    // Convertir tamaños a bytes para comparación
+                    let parse_size = |s: &str| -> u64 {
+                        let parts: Vec<&str> = s.split_whitespace().collect();
+                        if parts.len() != 2 { return 0; }
+                        
+                        let numero: f64 = parts[0].parse().unwrap_or(0.0);
+                        match parts[1] {
+                            "B" => numero as u64,
+                            "KB" => (numero * 1024.0) as u64,
+                            "MB" => (numero * 1024.0 * 1024.0) as u64,
+                            "GB" => (numero * 1024.0 * 1024.0 * 1024.0) as u64,
+                            "TB" => (numero * 1024.0 * 1024.0 * 1024.0 * 1024.0) as u64,
+                            _ => 0,
+                        }
+                    };
+                    
+                    parse_size(&a.tamano).cmp(&parse_size(&b.tamano))
+                },
+                OrderBy::Date => a.fecha.cmp(&b.fecha),
+            };
+
+            match self.order_direction {
+                OrderDirection::Ascending => comparacion,
+                OrderDirection::Descending => comparacion.reverse(),
+            }
+        });
     }
 }
 
@@ -404,6 +457,69 @@ impl eframe::App for App {
                 }
 
                 ui.separator();
+
+                // Añadir controles de ordenamiento antes de la tabla
+                ui.horizontal(|ui| {
+                    ui.label("Ordenar por:");
+                    
+                    if ui.button("Nombre").clicked() {
+                        if self.order_by == OrderBy::Name {
+                            self.order_direction = match self.order_direction {
+                                OrderDirection::Ascending => OrderDirection::Descending,
+                                OrderDirection::Descending => OrderDirection::Ascending,
+                            };
+                        } else {
+                            self.order_by = OrderBy::Name;
+                            self.order_direction = OrderDirection::Ascending;
+                        }
+                        self.ordenar_resultados();
+                    }
+                    
+                    if ui.button("Tipo").clicked() {
+                        if self.order_by == OrderBy::Type {
+                            self.order_direction = match self.order_direction {
+                                OrderDirection::Ascending => OrderDirection::Descending,
+                                OrderDirection::Descending => OrderDirection::Ascending,
+                            };
+                        } else {
+                            self.order_by = OrderBy::Type;
+                            self.order_direction = OrderDirection::Ascending;
+                        }
+                        self.ordenar_resultados();
+                    }
+                    
+                    if ui.button("Tamaño").clicked() {
+                        if self.order_by == OrderBy::Size {
+                            self.order_direction = match self.order_direction {
+                                OrderDirection::Ascending => OrderDirection::Descending,
+                                OrderDirection::Descending => OrderDirection::Ascending,
+                            };
+                        } else {
+                            self.order_by = OrderBy::Size;
+                            self.order_direction = OrderDirection::Ascending;
+                        }
+                        self.ordenar_resultados();
+                    }
+                    
+                    if ui.button("Fecha").clicked() {
+                        if self.order_by == OrderBy::Date {
+                            self.order_direction = match self.order_direction {
+                                OrderDirection::Ascending => OrderDirection::Descending,
+                                OrderDirection::Descending => OrderDirection::Ascending,
+                            };
+                        } else {
+                            self.order_by = OrderBy::Date;
+                            self.order_direction = OrderDirection::Ascending;
+                        }
+                        self.ordenar_resultados();
+                    }
+
+                    // Mostrar indicador de dirección
+                    ui.label(match self.order_direction {
+                        OrderDirection::Ascending => "↑",
+                        OrderDirection::Descending => "↓",
+                    });
+                });
 
                 // Mostrar resultados paginados
                 if !self.resultados.is_empty() {
