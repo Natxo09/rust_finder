@@ -1,3 +1,6 @@
+// TODO: Cuando se le da a buscar sin poner ninguna ruta se queda en bucle buscando
+//TODO: Cambiar de lado el watermark porque cuando cargan los resultados se esconde
+
 use eframe::egui;
 use crate::actions::open_directory;
 use crate::search::{directory_handler, engine};
@@ -392,6 +395,21 @@ impl eframe::App for App {
                 }
 
                 ui.separator();
+
+                // Añadir un espacio flexible que empuje la marca de agua hacia abajo
+                ui.add_space(ui.available_height() - 30.0);
+
+                // Marca de agua al final del panel lateral
+                ui.with_layout(egui::Layout::left_to_right(egui::Align::LEFT), |ui| {
+                    ui.label("Desarrollado por ");
+                    ui.hyperlink_to(
+                        egui::RichText::new("Natxo")
+                            .weak()
+                            .italics()
+                            .size(14.0),
+                        "https://github.com/Natxo09"
+                    );
+                });
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -579,16 +597,6 @@ impl eframe::App for App {
                         ui.add_space(20.0);
                     });
                 }
-
-                // Añadir marca de agua al final
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
-                    ui.add(egui::Label::new(
-                        egui::RichText::new("Desarrollado por Natxo")
-                            .weak()
-                            .italics()
-                            .size(14.0)
-                    ));
-                });
             });
         });
     }
